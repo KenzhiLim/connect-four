@@ -76,13 +76,13 @@ function App() {
 
     const winner = checkWinner(newBoard, rowIndex, colIndex);
     if (winner === humanPlayer) {
-      setStatus("Kamu menang! 🎉");
+      setStatus("Kamu menang!");
       setGameOver(true);
       return;
     }
 
     if (isDraw(newBoard)) {
-      setStatus("Seri! 😐");
+      setStatus("Seri!");
       setGameOver(true);
       return;
     }
@@ -129,11 +129,11 @@ function App() {
 
       if (data.is_terminal) {
         if (data.winner === aiPlayer) {
-          setStatus("AI menang. 😢");
+          setStatus("AI menang.");
         } else if (data.winner === humanPlayer) {
-          setStatus("Kamu menang! 🎉");
+          setStatus("Kamu menang!");
         } else if (data.winner === 3) {
-          setStatus("Seri! 😐");
+          setStatus("Seri!");
         } else {
           setStatus("Game selesai.");
         }
