@@ -11,7 +11,8 @@ from Helper import (
     pilih_aksi_ai
 )
 
-LUTS_PATH = "luts_dual.pkl"
+LUTS_PATH = "luts_dual_shaping.pkl"
+#LUTS_PATH = "luts_dual_no_shaping.pkl"
 
 with open(LUTS_PATH, "rb") as f:
     data = pickle.load(f)
