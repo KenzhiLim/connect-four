@@ -1,89 +1,99 @@
-/* ============================
-   LAYOUT UTAMA FULL SCREEN
-============================ */
-* {
-  box-sizing: border-box;
-}
+/* LAYOUT GLOBAL */
 .app {
-  height: 100vh;
+  min-height: 100vh;
   width: 100vw;
-
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-
-  background: #0f172a;
-  color: #e5e7eb;
-  font-family: system-ui, sans-serif;
-
-  overflow: hidden; /* cegah scroll */
-  padding: 8px 8px 12px;
-}
-
-/* Bungkus konten supaya bisa disusun & dipusatkan */
-.app-inner {
-  flex: 1;
-  width: 100%;
-  max-width: 900px;
-
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-
-  /* ruang vertikal dibagi rata supaya muat di 1 layar */
-  padding: 4px;
-  /* allow children to shrink correctly in flex layouts (prevents overflow) */
-  min-height: 0;
-}
-
-/* Judul + status di bagian atas */
-.header {
-  text-align: center;
-  margin-bottom: 4px;
-}
-
-.header h1 {
-  margin: 4px 0;
-  font-size: clamp(1.2rem, 2vw, 1.7rem);
-}
-
-.status {
-  margin: 0;
-  font-size: clamp(0.9rem, 1.4vw, 1rem);
-}
-
-/* ============================
-   BOARD
-============================ */
-.board-wrapper {
-  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  /* allow the board to shrink vertically inside this flex container */
-  min-height: 0;
+  background: #020617;
+  color: #e5e7eb;
+  font-family: system-ui, sans-serif;
+  padding: 16px;
 }
 
-/* board mengikuti rasio dan menyesuaikan tinggi layar */
-.board {
-  background: #1f2937;
-  padding: 8px;
-  border-radius: 16px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+.app-inner {
+  width: 100%;
+  max-width: 1200px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
 
+/* HEADER */
+.header {
+  text-align: center;
+}
+
+.header h1 {
+  margin: 0 0 4px 0;
+  font-size: clamp(1.4rem, 2.4vw, 2rem);
+}
+
+.status {
+  margin: 0 0 8px 0;
+}
+
+/* SWITCH MODE */
+.mode-switch {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+}
+
+.mode-btn {
+  padding: 6px 10px;
+  border-radius: 9999px;
+  border: 1px solid #4b5563;
+  background: #0f172a;
+  color: #e5e7eb;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.mode-btn.active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+}
+
+/* CONTENT: BOARD + SIDE PANEL */
+.content {
+  flex: 1;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+/* AREA BOARD (tengah) */
+.board-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+/* supaya board tetap di tengah */
+.board-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* BOARD */
+.board {
+  background: #303a64;
+  padding: 12px;
+  border-radius: 24px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.55);
   display: flex;
   flex-direction: column;
   aspect-ratio: 7 / 6;
-
-  /* let the board scale to the available vertical space (no page scroll)
-     - width limited so it never gets too wide on large screens
-     - height follows the wrapper via flex so header/footer don't push it offscreen */
-  width: min(90vw, 900px);
-  max-width: 90vw;
-  height: 100%;
-  max-height: 100%;
-  align-self: center;
+  max-height: 60vh;
+  width: min(70vw, 60vh * 7 / 6);
 }
 
 .board-row {
@@ -93,50 +103,34 @@
 
 .cell {
   flex: 1;
-  padding: 3px;
+  padding: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
 }
 
-/* ============================
-   DISC / KOIN
-============================ */
 .disc {
-  /* ensure disc is always a perfect circle regardless of cell shape */
-  width: min(96%, 11vmin);
-  height: auto;
-  aspect-ratio: 1 / 1;
-  border-radius: 50%;
-  background: #111827;
+  width: 100%;
+  height: 100%;
+  border-radius: 9999px;
+  background: #020617;
   transition: transform 0.12s ease-out;
 }
 
 .player-1 {
-  background: #fbbf24; /* kuning */
+  background: #fbbf24;
 }
 
 .player-2 {
-  background: #ef4444; /* merah */
+  background: #ef4444;
 }
 
 .cell:hover .disc {
-  transform: scale(1.08);
+  transform: scale(1.06);
 }
 
-/* ============================
-   CONTROLS & LEGEND DI BAWAH
-============================ */
-.footer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-
-  margin-top: 6px;
-}
-
+/* CONTROL & LEGEND */
 .controls {
   display: flex;
   gap: 12px;
@@ -148,15 +142,14 @@ button {
   padding: 8px 16px;
   border-radius: 9999px;
   border: none;
-  background: #3b82f6;
-  color: white;
+  background: #000000;
+  color: #ff0000;
   cursor: pointer;
-  font-weight: 500;
-  font-size: 0.9rem;
+  font-weight: 600;
 }
 
 button:hover {
-  filter: brightness(1.1);
+  filter: brightness(1.05);
 }
 
 .thinking {
@@ -166,8 +159,10 @@ button:hover {
 
 .legend {
   display: flex;
-  gap: 18px;
+  gap: 16px;
   font-size: 0.85rem;
+  align-items: center;
+  justify-content: center;
 }
 
 .legend-item {
@@ -176,10 +171,9 @@ button:hover {
   gap: 6px;
 }
 
-/* Lingkaran legenda */
 .legend-circle {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border-radius: 9999px;
 }
 
@@ -191,36 +185,54 @@ button:hover {
   background: #ef4444;
 }
 
-/* ============================
-   RESPONSIVE KECIL (hp)
-============================ */
-@media (max-height: 600px) {
+/* SIDE PANEL */
+.side-panel {
+  width: 280px;
+  max-width: 35vw;
+}
+
+.monitor {
+  padding: 10px 12px;
+  background: #020617;
+  border-radius: 16px;
+  border: 1px solid #1f2937;
+  font-size: 0.85rem;
+}
+
+.monitor h3 {
+  margin-top: 0;
+  margin-bottom: 6px;
+  font-size: 0.9rem;
+}
+
+.monitor-table {
+  width: 100%;
+  margin-top: 6px;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.monitor-table th,
+.monitor-table td {
+  padding: 4px 6px;
+  border-bottom: 1px solid #111827;
+  text-align: center;
+}
+
+/* RESPONSIVE: kalau layar sempit, stack vertikal */
+@media (max-width: 900px) {
+  .content {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .side-panel {
+    width: 100%;
+    max-width: 500px;
+  }
+
   .board {
-    /* even tighter constraints on very short screens */
-    width: min(92vw, 520px);
-    height: 100%;
-    max-height: 100%;
-  }
-
-  .header h1 {
-    font-size: 1.1rem;
-  }
-
-  .status {
-    font-size: 0.8rem;
-  }
-
-  button {
-    padding: 6px 12px;
-    font-size: 0.8rem;
-  }
-
-  .legend {
-    gap: 12px;
-  }
-
-  .legend-circle {
-    width: 14px;
-    height: 14px;
+    max-height: 55vh;
+    width: min(90vw, 55vh * 7 / 6);
   }
 }

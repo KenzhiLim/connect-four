@@ -1,5 +1,6 @@
 import random
 import numpy as np
+import math
 
 # ============================================================
 # HYPERPARAMETER UTAMA (diambil dari notebook)
@@ -158,6 +159,120 @@ def best_action_from_luts(board, luts_active, player):
             best_col = col
 
     return best_col
+
+
+# ============================================================
+# REWARD SHAPING (SAMAAKAN DENGAN NOTEBOOK)
+# ============================================================
+
+# Anneal & clip
+SHAPING_T_ANNEAL = 3_000_000   # episodes sampai shaping → 0
+SHAPING_CLIP = 0.30        # |total shaping| maksimum
+
+# Bobot fitur
+W_CENTER_START = 0.06   # bonus jika langkah pertama di kolom tengah
+W_BLOCK_THREAT = 0.10   # blok ancaman 1-langkah lawan
+W_PERFECT_PLAY = 0.06   # blok ancaman + meningkatkan own immediate wins
+W_SECOND_EDGE = 0.04   # koin kedua di ujung
+W_PARITY = 0.04   # prefer parity tertentu
+W_FORK = 0.12   # membuat fork (>=2 immediate wins pada langkah berikut)
+
+# Untuk evaluasi: shaping tidak di-anneal (step = 0)
+USE_SHAPING = True
+episodesTrained = 0     # supaya shaping_scale_cos(0) = 1.0
+
+
+def shaping_scale_cos(step):
+    if step is None or step <= 0:
+        return 1.0
+    if step >= SHAPING_T_ANNEAL:
+        return 0.0
+    return 0.5 * (1.0 + math.cos(math.pi * step / SHAPING_T_ANNEAL))
+
+
+def get_opponent(p):
+    return 2 if p == 1 else 1
+
+
+def reward_shaping_detail(board, action_col, player):
+    """
+    Versi lengkap reward shaping:
+    - Mengembalikan (nilai_shaping, list_jenis_reward)
+    """
+    if not globals().get("USE_SHAPING", True):
+        return 0.0, []
+
+    acts = cek_legal(board)
+    if action_col not in acts:
+        return 0.0, []
+
+    after, rLanding = drop_koin(board, action_col, player)
+
+    # TERMINAL? → jangan beri shaping
+    if cek_winner(after, rLanding, action_col) != 0 or is_draw(after):
+        return 0.0, []
+
+    opp = get_opponent(player)
+    reward = 0.0
+    kinds = []
+
+    # 1) Center start
+    if np.count_nonzero(board) == 0 and action_col == (COLS // 2):
+        reward += W_CENTER_START
+        kinds.append("CENTER_START")
+
+    # 2) Block 1-step threat lawan
+    opp_before = count_immediate_wins(board, opp)
+    if opp_before > 0 and count_immediate_wins(after, opp) == 0:
+        reward += W_BLOCK_THREAT
+        kinds.append("BLOCK_THREAT")
+
+    # 3) Perfect-play heuristic
+    my_before = count_immediate_wins(board, player)
+    my_after = count_immediate_wins(after, player)
+    if opp_before > 0 and count_immediate_wins(after, opp) == 0 and my_after > my_before:
+        reward += W_PERFECT_PLAY
+        kinds.append("PERFECT_PLAY")
+
+    # 4) Koin kedua di ujung
+    if np.count_nonzero(board == player) == 1 and (action_col in (0, COLS-1)):
+        reward += W_SECOND_EDGE
+        kinds.append("SECOND_EDGE")
+
+    # 5) Parity
+    dist = (ROWS - 1) - rLanding
+    preferred_parity = 0 if player == 1 else 1
+    if (dist % 2) == preferred_parity:
+        reward += W_PARITY
+        kinds.append("PARITY")
+
+    # 6) Fork
+    winNext = sum(
+        1 for c in cek_legal(after)
+        if is_immediate_win(after, c, player)
+    )
+    if winNext >= 2:
+        reward += W_FORK
+        kinds.append("FORK")
+
+    # Anneal + clip
+    step = globals().get("episodesTrained", 0)
+    scale = shaping_scale_cos(step)
+    shaped = reward * scale
+    if shaped > SHAPING_CLIP:
+        shaped = SHAPING_CLIP
+    if shaped < -SHAPING_CLIP:
+        shaped = -SHAPING_CLIP
+
+    return shaped, kinds
+
+
+def reward_shaping(board, action_col, player):
+    """
+    Wrapper kompatibel: hanya mengembalikan nilai shaping (tanpa label).
+    """
+    shaped, _ = reward_shaping_detail(board, action_col, player)
+    return shaped
 
 
 def pilih_aksi_ai(board, player, LUTsP1, LUTsP2):
