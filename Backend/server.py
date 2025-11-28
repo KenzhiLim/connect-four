@@ -8,12 +8,10 @@ from Helper import (
     ROWS, COLS,
     drop_koin, cek_winner, is_draw,
     pilih_aksi_ai, q_afterstate,
-    reward_shaping_detail,  # gunakan versi dengan label
+    reward_shaping_detail,
 )
 
-# ------------------------------------------------------------------
-# LOAD DUA CHECKPOINT LUT: DENGAN SHAPING & TANPA SHAPING
-# ------------------------------------------------------------------
+# Load LUT
 
 LUTS_SHAPING_PATH = "luts_dual_shaping.pkl"
 LUTS_NO_SHAPING_PATH = "luts_dual_no_shaping.pkl"
@@ -41,18 +39,17 @@ app.add_middleware(
 
 
 class MoveRequest(BaseModel):
-    board: list[list[int]]  # 6x7
-    player: int             # 1 atau 2
-    use_shaping: bool = True  # True = pakai LUT shaping, False = LUT no shaping
+    board: list[list[int]]
+    player: int
+    use_shaping: bool = True
 
 
 class MoveResponse(BaseModel):
-    column: int      # kolom yang dipilih AI
-    winner: int      # 0: belum, 1/2: pemenang, 3: seri
+    column: int
+    winner: int
     is_terminal: bool
     q_value: float
-    reward: float     # total reward (terminal + shaping kalau ada)
-    # deskripsi reward (jenis shaping / no_shaping / terminal)
+    reward: float
     reward_type: str
 
 
@@ -61,7 +58,6 @@ def get_move(req: MoveRequest):
     board_np = np.array(req.board, dtype=np.int8)
     player = req.player
 
-    # pilih LUT
     if req.use_shaping:
         LUTsP1 = LUTsP1_SHAPING
         LUTsP2 = LUTsP2_SHAPING
@@ -69,7 +65,14 @@ def get_move(req: MoveRequest):
         LUTsP1 = LUTsP1_NO_SHAPING
         LUTsP2 = LUTsP2_NO_SHAPING
 
-    col = pilih_aksi_ai(board_np, player, LUTsP1, LUTsP2)
+    col = pilih_aksi_ai(
+    board_np,
+    player,
+    LUTsP1,
+    LUTsP2,
+    use_threat_rule=req.use_shaping,
+)
+
     if col is None:
         return MoveResponse(
             column=-1,
@@ -86,7 +89,7 @@ def get_move(req: MoveRequest):
     luts_active = LUTsP1 if player == 1 else LUTsP2
     q_value = q_afterstate(board_after, luts_active)
 
-    # --- hitung reward ---
+    # Hitung reward
     terminal_reward = 1.0 if win != 0 else 0.0
 
     shaping = 0.0
