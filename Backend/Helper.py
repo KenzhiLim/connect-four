@@ -14,6 +14,8 @@ rng = random.Random(SEED)
 np.random.seed(SEED)
 
 # ENVIRONMENT
+
+
 def empty_board():
     # Papan kosong
     return np.zeros((ROWS, COLS), dtype=np.int8)
@@ -115,7 +117,6 @@ def q_afterstate(board_after, luts):
     return float(s)
 
 
-# POLICY: GREEDY & THREAT-AWARE
 def best_action_greedy(board, luts_active, player):
     acts = cek_legal(board)
     if not acts:
@@ -153,7 +154,6 @@ def best_action_threat_aware(board, luts_active, player):
                 best_col = col
         return best_col
 
-    # kalau tidak ada ancaman → pakai greedy biasa
     return best_action_greedy(board, luts_active, player)
 
 
