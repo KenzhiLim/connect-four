@@ -135,7 +135,7 @@ def best_action_greedy(board, luts_active, player):
     return best_col
 
 
-def best_action_threat_aware(board, luts_active, player):
+def best_action_greedy2(board, luts_active, player):
     acts = cek_legal(board)
     if not acts:
         return None
@@ -161,7 +161,7 @@ def pilih_aksi_ai(board, player, LUTsP1, LUTsP2, use_threat_rule=False):
     luts_active = LUTsP1 if player == 1 else LUTsP2
 
     if use_threat_rule:
-        return best_action_threat_aware(board, luts_active, player)
+        return best_action_greedy2(board, luts_active, player)
     else:
         return best_action_greedy(board, luts_active, player)
 
