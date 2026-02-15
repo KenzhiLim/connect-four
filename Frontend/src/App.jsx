@@ -5,6 +5,8 @@ const ROWS = 6;
 const COLS = 7;
 const EMPTY_BOARD = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
 
+const API_URL = "https://connectfour-backend-production.up.railway.app";
+
 function App() {
   const [board, setBoard] = useState(EMPTY_BOARD);
   const [currentPlayer, setCurrentPlayer] = useState(1);
@@ -17,8 +19,8 @@ function App() {
 
   const [lastQValue, setLastQValue] = useState(null);
   const [lastReward, setLastReward] = useState(null);
-  const [aiMoveHistory, setAiMoveHistory] = useState([]);
   const [lastRewardType, setLastRewardType] = useState("");
+  const [aiMoveHistory, setAiMoveHistory] = useState([]);
 
   const [useShaping, setUseShaping] = useState(true);
 
@@ -26,7 +28,6 @@ function App() {
     if (!gameOver && currentPlayer === aiPlayer) {
       callAiMove();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPlayer, aiPlayer, gameOver]);
 
   const resetGame = () => {
@@ -43,22 +44,20 @@ function App() {
       setIsAiThinking(false);
       setLastQValue(null);
       setLastReward(null);
+      setLastRewardType("");
       setAiMoveHistory([]);
-
       setCurrentPlayer(1);
-      if (aiAsP1) {
-        setStatus("AI mulai dulu (Player 1)...");
-      } else {
-        setStatus("Giliran kamu (Player 1)");
-      }
+
+      setStatus(
+        aiAsP1 ? "AI mulai dulu (Player 1)..." : "Giliran kamu (Player 1)",
+      );
 
       return aiAsP1;
     });
   };
 
   const handleColumnClick = (colIndex) => {
-    if (gameOver || isAiThinking) return;
-    if (currentPlayer !== humanPlayer) return;
+    if (gameOver || isAiThinking || currentPlayer !== humanPlayer) return;
 
     const rowIndex = findEmptyRow(board, colIndex);
     if (rowIndex === -1) return;
@@ -86,60 +85,56 @@ function App() {
 
   const callAiMove = async () => {
     setIsAiThinking(true);
+
     try {
-      const res = await fetch("http://localhost:8000/api/move", {
+      const res = await fetch(`${API_URL}/api/move`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          board: board,
+          board,
           player: aiPlayer,
           use_shaping: useShaping,
         }),
       });
 
+      if (!res.ok) throw new Error("Server error");
+
       const data = await res.json();
+
       const rewardType =
         typeof data.reward_type === "string" && data.reward_type.length > 0
           ? data.reward_type
           : useShaping
-          ? "shaping"
-          : "no_shaping";
+            ? "shaping"
+            : "no_shaping";
 
-      // simpan q dan reward
       setLastQValue(typeof data.q_value === "number" ? data.q_value : null);
       setLastReward(typeof data.reward === "number" ? data.reward : null);
       setLastRewardType(rewardType);
 
-      const col = data.column;
-
-      // simpan q dan reward
-      setLastQValue(typeof data.q_value === "number" ? data.q_value : null);
-      setLastReward(typeof data.reward === "number" ? data.reward : null);
-
-      setAiMoveHistory((prev) => {
-        const next = [
+      setAiMoveHistory((prev) =>
+        [
           ...prev,
           {
             move: prev.length + 1,
             column: data.column,
             q: data.q_value,
             reward: data.reward,
-            mode: useShaping ? "shaping" : "no-shaping",
-            rewardType: rewardType,
+            rewardType,
           },
-        ];
-        return next.slice(-5);
-      });
+        ].slice(-5),
+      );
 
+      const col = data.column;
       if (col < 0 || col >= COLS) {
-        setStatus("AI tidak bisa bergerak (game over).");
+        setStatus("AI tidak bisa bergerak.");
         setGameOver(true);
         return;
       }
 
       const rowIndex = findEmptyRow(board, col);
       if (rowIndex === -1) {
-        setStatus("Langkah AI tidak valid (kolom penuh).");
+        setStatus("Langkah AI tidak valid.");
         setGameOver(true);
         return;
       }
@@ -153,10 +148,8 @@ function App() {
           setStatus("AI menang.");
         } else if (data.winner === humanPlayer) {
           setStatus("Kamu menang!");
-        } else if (data.winner === 3) {
-          setStatus("Seri!");
         } else {
-          setStatus("Game selesai.");
+          setStatus("Seri!");
         }
         setGameOver(true);
       } else {
@@ -197,7 +190,6 @@ function App() {
           </div>
         </header>
 
-        {/* CONTENT: board + side panel */}
         <div className="content">
           <div className="board-area">
             <div className="board-wrapper">
@@ -210,7 +202,7 @@ function App() {
                         className="cell"
                         onClick={() => handleColumnClick(cIdx)}
                       >
-                        <div className={`disc player-${cell}`}></div>
+                        <div className={`disc player-${cell}`} />
                       </div>
                     ))}
                   </div>
@@ -224,81 +216,12 @@ function App() {
                 <span className="thinking">AI sedang berpikir...</span>
               )}
             </div>
-
-            <div className="legend">
-              <div className="legend-item">
-                <div className="legend-circle yellow"></div>
-                {humanPlayer === 1 ? "Kamu (Player 1)" : "AI (Player 1)"}
-              </div>
-              <div className="legend-item">
-                <div className="legend-circle red"></div>
-                {aiPlayer === 2 ? "AI (Player 2)" : "Kamu (Player 2)"}
-              </div>
-            </div>
           </div>
-
-          {/* PANEL DI SAMPING BOARD */}
-          <aside className="side-panel">
-            <div className="monitor">
-              <h3>Monitoring Langkah AI</h3>
-              <p>
-                Mode aktif:&nbsp;
-                <strong>
-                  {useShaping
-                    ? "Dengan reward shaping"
-                    : "Tanpa reward shaping"}
-                </strong>
-              </p>
-
-              {lastQValue !== null && (
-                <p>Q-value langkah terakhir: {lastQValue.toFixed(3)}</p>
-              )}
-              {lastReward !== null && (
-                <p>
-                  Reward langkah terakhir: {lastReward.toFixed(3)}{" "}
-                  {lastRewardType && <span>({lastRewardType})</span>}
-                </p>
-              )}
-
-              {aiMoveHistory.length > 0 && (
-                <table className="monitor-table">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Kolom</th>
-                      <th>Q</th>
-                      <th>R</th>
-                      <th>Jenis Reward</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {aiMoveHistory.map((m) => (
-                      <tr key={m.move}>
-                        <td>{m.move}</td>
-                        <td>{m.column}</td>
-                        <td>
-                          {typeof m.q === "number" ? m.q.toFixed(3) : "—"}
-                        </td>
-                        <td>
-                          {typeof m.reward === "number"
-                            ? m.reward.toFixed(3)
-                            : "—"}
-                        </td>
-                        <td>{m.rewardType || "—"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          </aside>
         </div>
       </div>
     </div>
   );
 }
-
-// ===== Helper di frontend =====
 
 function findEmptyRow(board, col) {
   for (let r = ROWS - 1; r >= 0; r--) {
@@ -309,7 +232,7 @@ function findEmptyRow(board, col) {
 
 function checkWinner(board, lastRow, lastCol) {
   const player = board[lastRow][lastCol];
-  if (player === 0) return 0;
+  if (!player) return 0;
 
   const dirs = [
     [1, 0],

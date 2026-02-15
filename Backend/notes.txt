@@ -1,2 +1,0 @@
-pip install fastapi uvicorn numpy pydantic
-python server.py
